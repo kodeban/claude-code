@@ -23,7 +23,10 @@ a pu changer depuis l'ouverture). La session de cette conversation est celle don
 (`sessionRef`) est celle de cette conversation, ou celle que cette conversation a ouverte, quels
 que soient son poste et son dossier. S'il y en a une : passe à l'étape 2.
 
-S'il n'y en a pas, fais choisir à l'utilisateur la session à clôturer, puis arrête-toi (pas
+Si la liste est vide (aucune session ouverte nulle part) : « Aucune session ouverte. » et rien
+d'autre.
+
+Si la liste n'est pas vide mais qu'aucune n'est celle de cette conversation, fais choisir à l'utilisateur la session à clôturer, puis arrête-toi (pas
 d'étape 2 : la note de la session est gardée telle quelle, le site la complète si elle est vide) :
 - dis-le en une ligne : « Aucune session ouverte dans cette conversation : choisissez celle à
   clôturer dans la page qui s'ouvre. » ;
@@ -32,7 +35,8 @@ d'étape 2 : la note de la session est gardée telle quelle, le site la complèt
 - puis `lire_cloture_session`, avec `kodeban-pause 3` entre deux questions pendant la première
   minute, `kodeban-pause 10` ensuite, jusqu'à « chosen » ou « expired » ;
 - « chosen » : « Session de la tâche #<numéro> « <titre> » clôturée, à reprendre. » (numéro =
-  champ `number` de la tâche) ; « expired » : « L'adresse a expiré : rien n'a été clôturé. ».
+  champ `number` de la tâche) ; sans session dans la réponse (tâche supprimée depuis) : « Session
+  clôturée, à reprendre. » ; « expired » : « L'adresse a expiré : rien n'a été clôturé. ».
 
 ## 2. La note finale
 
