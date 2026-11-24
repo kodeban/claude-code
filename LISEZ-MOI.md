@@ -48,6 +48,10 @@ Si vous aviez branché KodeBan à la main (`claude mcp add … kodeban2 …`), r
 - `/kodeban:in 57` : la tâche n° 57 ;
 - `/kodeban:in charte graphique` : la tâche qui correspond à ces mots (s'il y en a plusieurs, elles vous sont proposées).
 
+Si le projet de la tâche a des dépôts Git notés sur le site (fiche du projet › « Environnement
+technique »), Claude vérifie que le dossier de la conversation est l'un d'eux. Sinon, il vous le
+dit et vous demande s'il continue ici.
+
 Une conversation = une session. Votre première demande après `/kodeban:in` devient la demande de
 départ de la session. Ensuite, Claude tient la note de la session à jour au fil du travail.
 

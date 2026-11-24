@@ -1,6 +1,6 @@
 {
   "name": "kodeban",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Piloter son travail dans KodeBan : /kodeban:in (je commence), /kodeban:out (j'ai fini ou je m'arrête), /kodeban:todo (je note une chose pour plus tard), /kodeban:prompt (j'utilise un prompt de la banque).",
   "author": { "name": "KodeBan" },
   "homepage": "https://kodeban.fr",

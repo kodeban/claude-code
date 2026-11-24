@@ -2,7 +2,7 @@
 description: Commencer une tâche KodeBan dans cette conversation (ouvre une session de travail).
 argument-hint: "[numéro de tâche | quelques mots]"
 disable-model-invocation: true
-allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache
+allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_environnement_technique Bash(git remote *) PowerShell(git remote *)
 ---
 
 # /kodeban:in — je commence
@@ -56,6 +56,24 @@ Avec un numéro ou des mots : `lire_sessions` sur la tâche. Si une session est 
 sur cette tâche ailleurs (autre poste, autre dossier, autre personne), signale-le en une ligne et
 demande avant d'ouvrir. Puis `ouvrir_session` (assistant `claude_code`, ton modèle, poste, dossier,
 `sessionRef` = la référence de cette conversation, `objective` = « à préciser »).
+
+## 3 bis. Le bon dossier
+
+La session ouverte donne le projet de la tâche (`task.projectId`). Lis ses dépôts avec
+`lire_environnement_technique` ; ne garde que ceux qui ne sont pas archivés et qui ont une adresse.
+
+- L'outil ne répond pas, ou aucun dépôt : ne dis rien, passe à la suite.
+- Sinon, lis l'adresse du dépôt du dossier : `git remote get-url origin`, à défaut `git remote -v`.
+  Compare-la à chaque dépôt sur le serveur et le chemin seulement : sans le protocole (https, ssh),
+  sans l'utilisateur devant le serveur, sans le `.git` final, sans tenir compte des majuscules.
+  Exemples d'adresses égales : `git@github.com:kodeban/claude-code.git` et
+  `https://github.com/kodeban/claude-code` ; `org@ssh.dev.azure.com:v3/org/proj/depot` et
+  `https://org@dev.azure.com/org/proj/_git/depot`.
+- Un dépôt correspond : ne dis rien.
+- Aucun ne correspond, ou le dossier n'est pas un dépôt Git : préviens et attends la réponse avant
+  la suite. « Ce dossier (dépôt <adresse> | pas un dépôt Git) ne fait pas partie des dépôts du
+  projet <projet> (<noms des dépôts>). On continue ici ? » Non : laisse la session ouverte et
+  arrête-toi (l'utilisateur la clôture avec `/kodeban:out`). Git absent du poste : ne dis rien.
 
 ## 4. Montrer le choix
 
