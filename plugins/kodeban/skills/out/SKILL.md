@@ -2,7 +2,7 @@
 description: Clôturer la session KodeBan de cette conversation (terminée ou à reprendre).
 argument-hint: "[pause | !]"
 disable-model-invocation: true
-allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(git log *) Bash(git branch *) Bash(git rev-parse *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__ajouter_reference_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__lire_tache
+allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) Bash(git log *) Bash(git branch *) Bash(git rev-parse *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__ajouter_reference_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__demander_cloture_session mcp__plugin_kodeban_kodeban__lire_cloture_session
 ---
 
 # /kodeban:out — j'ai fini, ou je m'arrête
@@ -21,8 +21,18 @@ arrête-toi.
 Appelle `mes_sessions_ouvertes` **sans aucun argument** (ni poste ni dossier : le dossier courant
 a pu changer depuis l'ouverture). La session de cette conversation est celle dont la référence
 (`sessionRef`) est celle de cette conversation, ou celle que cette conversation a ouverte, quels
-que soient son poste et son dossier. S'il n'y en a pas : « Aucune session ouverte dans cette
-conversation. » et rien d'autre.
+que soient son poste et son dossier. S'il y en a une : passe à l'étape 2.
+
+S'il n'y en a pas, fais choisir à l'utilisateur la session à clôturer, puis arrête-toi (pas
+d'étape 2 : la note de la session est gardée telle quelle, le site la complète si elle est vide) :
+- dis-le en une ligne : « Aucune session ouverte dans cette conversation : choisissez celle à
+  clôturer dans la page qui s'ouvre. » ;
+- `kodeban-poste`, puis `demander_cloture_session` (assistant `claude_code`, poste, dossier) ;
+- ouvre l'adresse avec `kodeban-ouvrir <adresse>` ; si ça échoue, affiche l'adresse ;
+- puis `lire_cloture_session`, avec `kodeban-pause 3` entre deux questions pendant la première
+  minute, `kodeban-pause 10` ensuite, jusqu'à « chosen » ou « expired » ;
+- « chosen » : « Session de la tâche #<numéro> « <titre> » clôturée, à reprendre. » (numéro =
+  champ `number` de la tâche) ; « expired » : « L'adresse a expiré : rien n'a été clôturé. ».
 
 ## 2. La note finale
 
