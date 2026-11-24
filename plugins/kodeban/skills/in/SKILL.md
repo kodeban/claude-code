@@ -2,7 +2,7 @@
 description: Commencer une tâche KodeBan dans cette conversation (ouvre une session de travail).
 argument-hint: "[numéro de tâche | quelques mots]"
 disable-model-invocation: true
-allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_environnement_technique Bash(git remote -v) PowerShell(git remote -v)
+allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_depots_projet Bash(git remote -v) PowerShell(git remote -v)
 ---
 
 # /kodeban:in — je commence
@@ -60,7 +60,7 @@ demande avant d'ouvrir. Puis `ouvrir_session` (assistant `claude_code`, ton mod�
 ## 3 bis. Le bon dossier
 
 La session ouverte donne le projet de la tâche (`task.projectId`). Lis ses dépôts avec
-`lire_environnement_technique` ; ne garde que ceux qui ne sont pas archivés et qui ont une adresse.
+`lire_depots_projet` ; ne garde que ceux qui ne sont pas archivés et qui ont une adresse.
 
 - Cet outil n'existe pas ou renvoie une erreur (site plus ancien), ou aucun dépôt : saute ce point
   sans rien dire. La règle du début (« Branchez KodeBan ») ne vaut pas ici : la session est ouverte.
