@@ -2,7 +2,7 @@
 description: Commencer une tâche KodeBan dans cette conversation (ouvre une session de travail).
 argument-hint: "[numéro de tâche | quelques mots]"
 disable-model-invocation: true
-allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_environnement_technique Bash(git remote *) PowerShell(git remote *)
+allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_environnement_technique Bash(git remote -v) PowerShell(git remote -v)
 ---
 
 # /kodeban:in — je commence
@@ -62,18 +62,29 @@ demande avant d'ouvrir. Puis `ouvrir_session` (assistant `claude_code`, ton mod�
 La session ouverte donne le projet de la tâche (`task.projectId`). Lis ses dépôts avec
 `lire_environnement_technique` ; ne garde que ceux qui ne sont pas archivés et qui ont une adresse.
 
-- L'outil ne répond pas, ou aucun dépôt : ne dis rien, passe à la suite.
-- Sinon, lis l'adresse du dépôt du dossier : `git remote get-url origin`, à défaut `git remote -v`.
-  Compare-la à chaque dépôt sur le serveur et le chemin seulement : sans le protocole (https, ssh),
-  sans l'utilisateur devant le serveur, sans le `.git` final, sans tenir compte des majuscules.
-  Exemples d'adresses égales : `git@github.com:kodeban/claude-code.git` et
-  `https://github.com/kodeban/claude-code` ; `org@ssh.dev.azure.com:v3/org/proj/depot` et
-  `https://org@dev.azure.com/org/proj/_git/depot`.
-- Un dépôt correspond : ne dis rien.
-- Aucun ne correspond, ou le dossier n'est pas un dépôt Git : préviens et attends la réponse avant
-  la suite. « Ce dossier (dépôt <adresse> | pas un dépôt Git) ne fait pas partie des dépôts du
-  projet <projet> (<noms des dépôts>). On continue ici ? » Non : laisse la session ouverte et
-  arrête-toi (l'utilisateur la clôture avec `/kodeban:out`). Git absent du poste : ne dis rien.
+- Cet outil n'existe pas ou renvoie une erreur (site plus ancien), ou aucun dépôt : saute ce point
+  sans rien dire. La règle du début (« Branchez KodeBan ») ne vaut pas ici : la session est ouverte.
+- Sinon, lance `git remote -v` tel quel (sans `-C`, sans `cd`, sans redirection) et garde chaque
+  adresse « (fetch) » : un fork a souvent son `origin` à soi et le dépôt du projet en `upstream`.
+- Ramène chaque adresse, des deux côtés, à une forme simple, puis compare :
+  - Azure DevOps (`dev.azure.com`, `ssh.dev.azure.com`, `<org>.visualstudio.com`,
+    `vs-ssh.visualstudio.com`) → `azure/<organisation>/<projet>/<dépôt>` : l'organisation est le
+    sous-domaine pour `<org>.visualstudio.com` (pas `vs-ssh`), sinon le premier mot du chemin ; on ignore
+    `DefaultCollection`, `_git` et `v3`.
+  - Ailleurs → serveur sans port, puis le chemin (`:` des adresses ssh lu comme `/`), sans le
+    protocole, sans ce qui précède `@`, sans `.git` ni `/` final, sans `?…` ni `#…`. Une adresse
+    copiée depuis le navigateur (`…/tree/main`, `…/-/tree/…`) s'arrête au nom du dépôt.
+  - Sans tenir compte des majuscules. Égales, par exemple : `git@github.com:kodeban/claude-code.git`
+    et `https://github.com/kodeban/claude-code/tree/main` ; `org@ssh.dev.azure.com:v3/org/proj/depot`,
+    `https://org@dev.azure.com/org/proj/_git/depot` et `https://org.visualstudio.com/DefaultCollection/proj/_git/depot`.
+- Une adresse du dossier correspond à un dépôt du projet : ne dis rien.
+- Git absent du poste (« commande introuvable », « not recognized ») : ne dis rien. Pas un dépôt Git
+  (« not a git repository »), dépôt sans adresse, ou aucune correspondance : préviens et attends la
+  réponse avant la suite. « Ce dossier (dépôt <adresse sans ce qui précède @> | dépôt Git sans
+  adresse | pas un dépôt Git) ne fait pas partie des dépôts du projet <projet> (<noms des dépôts>).
+  On continue ici ? »
+- Non : propose de clôturer tout de suite la session « à reprendre », reste à faire « reprendre dans
+  le dossier du bon dépôt (<noms>) » ; clôture seulement si l'utilisateur dit oui ; puis arrête-toi.
 
 ## 4. Montrer le choix
 
