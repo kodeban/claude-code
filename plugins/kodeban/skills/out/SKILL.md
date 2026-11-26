@@ -49,6 +49,13 @@ Rédige et montre la note finale, courte :
 
 Sans mot de passe, sans clé, sans donnée d'un client. Jamais la conversation recopiée.
 
+Lis la tâche (`lire_tache`). Si elle a une adresse de suivi (`followEmail`), ajoute à la note un
+**message au demandeur** : la personne qui suit la tâche, souvent hors de l'équipe. Trois à cinq
+phrases, en mots simples : ce qui a changé pour elle, ce qu'elle peut faire maintenant. Ni jargon, ni
+nom de fichier, ni commit, ni nom d'outil. Montre-le sous la note, avec l'adresse. Il ne part jamais
+d'ici : quand l'utilisateur passera la tâche dans une colonne de fin, le site lui proposera ce message
+à relire avant de l'envoyer.
+
 ## 3. L'accord
 
 - Avec `!` (seul, ou avec des mots) : ne pose aucune question et n'attends rien. La note montrée
@@ -63,7 +70,8 @@ Corrige la note si l'utilisateur le demande, puis redemande l'accord (sauf avec 
 
 Ajoute à la session les commits de cette conversation qui n'y sont pas encore
 (`ajouter_reference_session`, avec la branche), puis `cloturer_session` (`done` = terminée,
-`resume` = à reprendre) avec la note.
+`resume` = à reprendre) avec la note. Le message au demandeur va dans `followUpMessage`, seulement
+pour une clôture « terminée » : à reprendre, le travail n'est pas fini, ne l'envoie pas.
 
 Si le site refuse (note incomplète) : complète ce qui manque — demande à l'utilisateur si tu ne le
 sais pas — et recommence. Jamais de contournement.
@@ -71,3 +79,5 @@ sais pas — et recommence. Jamais de contournement.
 ## 5. Une ligne pour finir
 
 Où se trouve maintenant la tâche (colonne, tableau), ou « À reprendre : la tâche n'a pas bougé. »
+Avec un message au demandeur : ajoute « Le message pour <adresse> vous sera proposé quand la tâche
+passera dans une colonne de fin. »
