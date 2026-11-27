@@ -111,7 +111,8 @@ Seulement pour une clôture « à reprendre » avec des commits pas encore pouss
 pousse les <n> commits de la branche <branche> ? » — avec `pause`, dans la même question que
 l'accord ; sinon, dès que l'utilisateur a répondu « à reprendre ». Attends la réponse.
 - Oui : `git push` (la branche courante, telle quelle) ; sans branche suivie :
-  `git push -u origin <branche>`. Puis mets à jour le travail en cours (« poussée »).
+  `git push -u origin <branche>`. Puis mets à jour le travail en cours : si `git status --porcelain`
+  est vide, « rien en cours », exactement ces mots ; sinon « poussée », avec les fichiers modifiés.
 - Non : ne pousse pas ; on clôture quand même.
 - Le push est refusé (droits, conflit) : dis-le en une ligne, écris-le dans le travail en cours
   (« push refusé : <raison courte> »), et clôture quand même.
