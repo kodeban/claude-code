@@ -2,7 +2,7 @@
 description: Clôturer la session KodeBan de cette conversation (terminée ou à reprendre).
 argument-hint: "[pause | !]"
 disable-model-invocation: true
-allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) Bash(git log *) Bash(git branch *) Bash(git rev-parse *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__ajouter_reference_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__demander_cloture_session mcp__plugin_kodeban_kodeban__lire_cloture_session
+allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) Bash(git log *) PowerShell(git log *) Bash(git branch *) PowerShell(git branch *) Bash(git rev-parse *) PowerShell(git rev-parse *) Bash(git status *) PowerShell(git status *) Bash(git rev-list *) PowerShell(git rev-list *) Bash(git push *) PowerShell(git push *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__ajouter_reference_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__demander_cloture_session mcp__plugin_kodeban_kodeban__lire_cloture_session
 ---
 
 # /kodeban:out — j'ai fini, ou je m'arrête
@@ -56,25 +56,88 @@ nom de fichier, ni commit, ni nom d'outil. Montre-le sous la note, avec l'adress
 d'ici : quand l'utilisateur passera la tâche dans une colonne de fin, le site lui proposera ce message
 à relire avant de l'envoyer.
 
+### Travail en cours
+
+Rempli d'office, sans rien demander. Lance, tels quels : `git status --porcelain`,
+`git branch --show-current`, puis `git rev-list --count '@{u}..HEAD'` (commits pas encore poussés ;
+garde les guillemets). Si ce dernier dit qu'il n'y a pas de branche suivie : la branche n'a jamais
+été poussée, tous ses commits sont à pousser (leur nombre : `git rev-list --count HEAD --not --remotes`).
+
+En une ou deux lignes : la branche, poussée ou non (combien de commits à pousser), les fichiers
+modifiés laissés sur place, et le poste (donné par `kodeban-poste`). Tout est poussé et rien n'est
+modifié : « rien en cours ». Pas un dépôt Git (« not a git repository ») ou Git absent : n'écris
+rien.
+
+**En attente de** : seulement si une question à une personne bloque la suite (qui, et quoi).
+Sinon, rien.
+
+### Où on en est
+
+C'est le texte de la tâche, pas de la session : celui qu'on lit en premier pour la reprendre. Lis
+le texte actuel avec `lire_sessions` (champ `handover` : son texte et sa `version` ; `null` s'il n'y
+en a pas encore). Réécris-le en entier avec ce que cette session a appris : jamais de notes
+empilées les unes sur les autres. Écris-le pour un développeur qui reprend sans rien connaître et
+n'a pas suivi la conversation. Court, en Markdown simple, avec ces rubriques, dans cet ordre :
+- **But** ;
+- **Ce qui marche** ;
+- **Décisions qui tiennent**, chacune avec sa raison ;
+- **Pistes abandonnées**, chacune avec sa raison ;
+- **Reste à faire** ;
+- **Où est le code** ;
+- **Comment vérifier**.
+
+Écris-le aussi bien pour une clôture « terminée » que « à reprendre ». Même règle que la note : ni
+mot de passe, ni clé, ni donnée d'un client.
+
+Montre, ensemble : la note, le travail en cours, l'attente s'il y en a une, puis « Où on en est ».
+Le même accord vaut pour tout.
+
 ## 3. L'accord
 
-- Avec `!` (seul, ou avec des mots) : ne pose aucune question et n'attends rien. La note montrée
+- Avec `!` (seul, ou avec des mots) : ne pose aucune question et n'attends rien. Ce qui est montré
   vaut accord : passe aussitôt à la clôture, « terminée ».
-- Avec `pause` : demande seulement l'accord sur la note ; la session sera clôturée « à reprendre ».
-  Attends la réponse.
-- Sinon : demande « Terminée, ou à reprendre ? » et l'accord sur la note. Attends la réponse.
+- Avec `pause` : demande seulement l'accord sur ce qui est montré ; la session sera clôturée « à
+  reprendre ». Attends la réponse.
+- Sinon : demande « Terminée, ou à reprendre ? » et l'accord sur ce qui est montré. Attends la
+  réponse.
 
-Corrige la note si l'utilisateur le demande, puis redemande l'accord (sauf avec `!`).
+Corrige la note ou « Où on en est » si l'utilisateur le demande, puis redemande l'accord (sauf avec
+`!`).
+
+### Commits pas encore poussés
+
+Seulement pour une clôture « à reprendre » avec des commits pas encore poussés. Demande : « Je
+pousse les <n> commits de la branche <branche> ? » — avec `pause`, dans la même question que
+l'accord ; sinon, dès que l'utilisateur a répondu « à reprendre ». Attends la réponse.
+- Oui : `git push` (la branche courante, telle quelle) ; sans branche suivie :
+  `git push -u origin <branche>`. Puis mets à jour le travail en cours (« poussée »).
+- Non : ne pousse pas ; on clôture quand même.
+- Le push est refusé (droits, conflit) : dis-le en une ligne, écris-le dans le travail en cours
+  (« push refusé : <raison courte> »), et clôture quand même.
+
+Jamais de commit, de nouvelle branche ni de remisage faits par cette commande : les fichiers non
+commités sont seulement signalés dans le travail en cours.
 
 ## 4. Clôturer
 
 Ajoute à la session les commits de cette conversation qui n'y sont pas encore
 (`ajouter_reference_session`, avec la branche), puis `cloturer_session` (`done` = terminée,
-`resume` = à reprendre) avec la note. Le message au demandeur va dans `followUpMessage`, seulement
-pour une clôture « terminée » : à reprendre, le travail n'est pas fini, ne l'envoie pas.
+`resume` = à reprendre) avec la note, `workInProgress` (le travail en cours, s'il y en a un),
+`waitingFor` (l'attente, s'il y en a une), `handover` (« Où on en est ») et `handoverVersion` (la
+version lue avec `lire_sessions` ; ne l'envoie pas si `handover` était `null`). Le message au
+demandeur va dans `followUpMessage`, seulement pour une clôture « terminée » : à reprendre, le
+travail n'est pas fini, ne l'envoie pas.
 
-Si le site refuse (note incomplète) : complète ce qui manque — demande à l'utilisateur si tu ne le
-sais pas — et recommence. Jamais de contournement.
+Si le site refuse :
+- « Où on en est » a changé entre-temps (`handover_conflict`) : rien n'est clôturé, la session reste
+  ouverte. Relis-le avec `lire_sessions`, refonds le nouveau texte avec ce que cette session a
+  appris, remontre-le et redemande l'accord. Même avec `!` : dis-le en une ligne (« Quelqu'un a
+  modifié « Où on en est » entre-temps : voici le texte refondu. ») et redemande.
+- Un texte trop long : raccourcis-le (jamais coupé au milieu) et recommence.
+- Note incomplète : complète ce qui manque — demande à l'utilisateur si tu ne le sais pas — et
+  recommence.
+
+Jamais de contournement.
 
 ## 5. Une ligne pour finir
 
