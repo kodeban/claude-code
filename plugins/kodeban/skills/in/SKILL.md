@@ -2,7 +2,7 @@
 description: Commencer une tâche KodeBan dans cette conversation (ouvre une session de travail).
 argument-hint: "[numéro de tâche | quelques mots]"
 disable-model-invocation: true
-allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_depots_projet Bash(git remote -v) PowerShell(git remote -v)
+allowed-tools: Bash(kodeban-poste) PowerShell(kodeban-poste) Bash(kodeban-poste *) PowerShell(kodeban-poste *) Bash(kodeban-ouvrir *) PowerShell(kodeban-ouvrir *) Bash(kodeban-nommer *) PowerShell(kodeban-nommer *) Bash(kodeban-pause *) PowerShell(kodeban-pause *) mcp__plugin_kodeban_kodeban__mes_sessions_ouvertes mcp__plugin_kodeban_kodeban__chercher_tache mcp__plugin_kodeban_kodeban__lire_tache mcp__plugin_kodeban_kodeban__lire_sessions mcp__plugin_kodeban_kodeban__ouvrir_session mcp__plugin_kodeban_kodeban__noter_session mcp__plugin_kodeban_kodeban__cloturer_session mcp__plugin_kodeban_kodeban__demander_choix_tache mcp__plugin_kodeban_kodeban__lire_choix_tache mcp__plugin_kodeban_kodeban__lire_depots_projet Bash(git remote -v) PowerShell(git remote -v) Bash(git fetch *) PowerShell(git fetch *) Bash(git switch *) PowerShell(git switch *) Bash(git status *) PowerShell(git status *) Bash(git branch *) PowerShell(git branch *)
 ---
 
 # /kodeban:in — je commence
@@ -77,7 +77,8 @@ La session ouverte donne le projet de la tâche (`task.projectId`). Lis ses dép
   - Sans tenir compte des majuscules. Égales, par exemple : `git@github.com:kodeban/claude-code.git`
     et `https://github.com/kodeban/claude-code/tree/main` ; `org@ssh.dev.azure.com:v3/org/proj/depot`,
     `https://org@dev.azure.com/org/proj/_git/depot` et `https://org.visualstudio.com/DefaultCollection/proj/_git/depot`.
-- Une adresse du dossier correspond à un dépôt du projet : ne dis rien.
+- Une adresse du dossier correspond à un dépôt du projet : ne dis rien. Garde ce dépôt (sa branche
+  principale, `mainBranch`) et la règle du projet (`branchPerTask`) : ils servent à l'étape 7.
 - Git absent du poste (« commande introuvable », « not recognized ») : ne dis rien. Pas un dépôt Git
   (« not a git repository »), dépôt sans adresse, ou aucune correspondance : préviens et attends la
   réponse avant la suite. « Ce dossier (dépôt <adresse sans ce qui précède @> | dépôt Git sans
@@ -95,9 +96,22 @@ Une ligne : numéro, titre, tableau, projet, client (« projet interne » s'il n
 Puis le contenu de la carte : la description en entier (sans la résumer ni la couper), la priorité
 et l'échéance s'il y en a, les commentaires (auteur, date, texte), et le nom des pièces jointes.
 Ne répète pas le résumé s'il redit la description. Rien d'autre sur la carte : dis-le en une ligne.
-Si la tâche a déjà eu une session : deux lignes sur là où le travail s'était arrêté (résumé,
-reste à faire, prochaine étape de la dernière session). Les heures du site sont en temps
-universel : convertis-les en heure locale, ou ne donne que la date.
+
+Puis là où le travail s'était arrêté. Si les sessions de la tâche n'ont pas encore été lues (page
+de choix), lis-les avec `lire_sessions`. La session que la page vient d'ouvrir est alors la plus
+récente de la liste : la précédente est celle d'avant. Avec un numéro ou des mots, elles ont été
+lues avant l'ouverture : la plus récente de la liste est la précédente.
+
+- **Où on en est** (champ `handover`) : un titre « Où on en est (mis à jour le <date> par
+  <auteur>) », puis le texte en entier, sans le résumer ni le couper.
+- Pas de « Où on en est » (tâche ancienne), mais déjà une session : deux lignes tirées de la
+  dernière session (résumé, reste à faire, prochaine étape).
+- Puis, de la dernière session clôturée : « Travail en cours : … » et « En attente : … », chacun
+  seulement s'il est rempli.
+- Aucune session avant celle-ci : rien.
+
+Les heures du site sont en temps universel : convertis-les en heure locale, ou ne donne que la
+date.
 
 Prépare le nom de la conversation : `kodeban-nommer ${CLAUDE_SESSION_ID} "#<numéro> <titre de la
 tâche>"` (titre raccourci s'il dépasse 60 caractères). La conversation le prend au message suivant
@@ -111,6 +125,14 @@ et où ça se passe probablement (site, paquet, appli…) si la carte le laisse 
 la description : reformule-la. N'invente rien : ce que la carte ne dit pas, pose-le en questions
 (trois au plus, les plus utiles d'abord). Ne cherche pas dans le code à ce stade.
 
+Les questions tiennent compte du travail en cours de la dernière session clôturée :
+- il nomme une branche et le dossier n'est pas dessus (`git branch --show-current`) : demande s'il
+  faut la récupérer (`git fetch`, puis passer dessus). Sauf si c'est la branche de la tâche et que le
+  projet veut une branche par tâche : l'étape 7 la prend d'office, ne demande rien ;
+- des fichiers modifiés ou des commits non poussés sont restés sur un autre poste : dis-le, et
+  demande s'il faut les attendre ou repartir sans eux ;
+- une attente est notée : demande si la réponse est arrivée.
+
 Termine par : « Est-ce que j'ai bien compris ? Qu'est-ce qu'on fait ? »
 
 ## 6. Demande de départ
@@ -119,6 +141,32 @@ La réponse de l'utilisateur corrige ou confirme ta compréhension, puis donne l
 travail : c'est la demande de départ. Range-la avec `noter_session` (`objective`), en quelques
 lignes, avec la compréhension validée (corrections comprises), avant de commencer le travail. Si
 l'utilisateur te corrige sans rien demander d'autre, reformule de nouveau et redemande.
+
+## 7. La branche de la tâche
+
+Seulement si le projet veut une branche par tâche (`branchPerTask` vrai) et que le dossier est un
+des dépôts du projet (étape 3 bis). Sinon, saute ce point sans rien dire. Fais-le juste après avoir
+rangé la demande de départ, avant tout travail. Rien à demander : c'est la règle du projet.
+
+- Nom : `kodeban/<numéro>-<titre>`, le titre en minuscules, sans accents, les mots reliés par des
+  tirets (ni espace, ni ponctuation, ni tiret au début ou à la fin), 40 caractères au plus, coupé
+  entre deux mots. Par exemple, #87 « Export CSV des tâches » : `kodeban/87-export-csv-des-taches`.
+- Lance `git branch --show-current`.
+  - Le dossier est déjà sur une branche `kodeban/<numéro>-…` de cette tâche : rien à faire.
+  - Il est sur une autre branche que la branche principale du dépôt (`mainBranch`), ou sur aucune :
+    n'y touche pas. Le dépôt n'a pas de branche principale sur le site : ce cas ne joue pas.
+- Sinon, cherche la branche : `git branch --list "kodeban/<numéro>-*"` ; pas là, `git fetch --all`,
+  puis `git branch -r --list "*/kodeban/<numéro>-*"`. Une branche de ce numéro existe (son titre a
+  pu changer depuis) : `git switch <son nom>`, sans le nom du serveur devant.
+- Aucune : `git switch -c <nom>`, depuis la branche où est le dossier (la branche principale ; sans
+  `mainBranch`, la branche courante).
+- Git refuse de changer de branche à cause de fichiers modifiés non commités : dis-le en une ligne
+  (les fichiers en cause) et attends la réponse avant tout travail. Jamais de commit ni de remisage
+  pour passer outre.
+- `git fetch` échoue (réseau, droits) : dis-le en une ligne et continue avec ce qui est sur le poste.
+
+Une ligne pour annoncer la branche : « Branche de la tâche : `<nom>` (créée | récupérée du serveur |
+déjà là). » ; ou, si tu n'y as pas touché : « Le dossier est sur la branche `<nom>` : je la garde. »
 
 ## Règles jusqu'à la clôture de la session
 
