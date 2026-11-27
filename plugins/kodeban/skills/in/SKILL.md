@@ -173,20 +173,25 @@ règle du projet. Ne demande que dans les cas dits plus bas.
     serveur existe et n'est pas en retard (ni `behind`, ni `gone`) ; s'il n'y en a pas exactement
     une, montre-les et demande.
   - Seulement sur le serveur : `git branch -r --list "*/kodeban/<numéro>-*"`, puis
-    `git switch --track <serveur>/<nom>`, avec le serveur du dépôt du projet retenu à l'étape 3 bis
-    (dans un fork, souvent `upstream` et non `origin`).
+    `git switch --track <serveur>/<nom>`, avec le serveur qui porte vraiment la branche dans cette
+    liste (dans un fork, c'est souvent `origin` : `/kodeban:out` y pousse). Plusieurs serveurs la
+    portent : prends celui du dépôt du projet retenu à l'étape 3 bis.
   - Nulle part : `git switch -c <nom>`, depuis la branche où est le dossier (la branche principale ;
-    sans `mainBranch`, la branche courante).
+    sans `mainBranch`, la branche courante). Si la première ligne de `git status` la montrait en
+    retard (`behind <n>`) : dis-le en une ligne et demande avant de créer la branche.
 - Des fichiers modifiés non commités suivent le changement de branche : nomme-les dans l'annonce.
   Git refuse de changer de branche à cause d'eux : dis-le en une ligne (les fichiers en cause) et
   attends la réponse avant tout travail. Jamais de commit ni de remisage pour passer outre.
 - Une fois sur la branche de la tâche, relance `git status --porcelain --branch` : `behind <n>` sur
   la première ligne veut dire que le serveur a <n> commits de plus. Dis-le dans l'annonce et attends
-  la réponse avant tout travail.
+  la réponse avant tout travail. Oui : `git merge --ff-only <serveur>/<nom>` (le serveur de sa
+  branche suivie). La branche a aussi des commits à elle (`ahead <m>, behind <n>`) : elle a divergé ;
+  dis-le et demande quoi faire. Jamais de `git pull` ni de `rebase` sans le dire.
 
 Une ligne pour annoncer la branche : « Branche de la tâche : `<nom>` (créée | récupérée du serveur |
 déjà là) » ; s'il y en a, « ; les fichiers modifiés <fichiers> suivent » ; s'il y a du retard,
-« ; elle a <n> commits de retard sur le serveur : je la mets à jour avant de commencer ? ». Si tu
+« ; elle a <n> commits de retard sur le serveur : je la mets à jour avant de commencer ? » (ou, si
+elle a divergé : « ; elle a <m> commits à elle et <n> de retard sur le serveur : que fait-on ? »). Si tu
 n'y as pas touché : « Le dossier est sur la branche `<nom>` : je la garde. », ou « Le dossier n'est
 sur aucune branche : je n'y touche pas. »
 
