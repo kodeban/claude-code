@@ -65,7 +65,8 @@ garde les guillemets). Si ce dernier dit qu'il n'y a pas de branche suivie : la 
 
 En une ou deux lignes : la branche, poussée ou non (combien de commits à pousser), les fichiers
 modifiés laissés sur place, et le poste (donné par `kodeban-poste`). Tout est poussé et rien n'est
-modifié : « rien en cours ». Pas un dépôt Git (« not a git repository ») ou Git absent : n'écris
+modifié : « rien en cours », exactement ces mots (le site les lit comme « rien en attente » et
+n'affiche alors aucun avertissement sur la session). Pas un dépôt Git (« not a git repository ») ou Git absent : n'écris
 rien.
 
 **En attente de** : seulement si une question à une personne bloque la suite (qui, et quoi).
