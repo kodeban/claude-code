@@ -78,7 +78,8 @@ La session ouverte donne le projet de la tâche (`task.projectId`). Lis ses dép
     et `https://github.com/kodeban/claude-code/tree/main` ; `org@ssh.dev.azure.com:v3/org/proj/depot`,
     `https://org@dev.azure.com/org/proj/_git/depot` et `https://org.visualstudio.com/DefaultCollection/proj/_git/depot`.
 - Une adresse du dossier correspond à un dépôt du projet : ne dis rien. Garde ce dépôt (sa branche
-  principale, `mainBranch`) et la règle du projet (`branchPerTask`) : ils servent à l'étape 7.
+  principale, `mainBranch`), le nom que lui donne `git remote -v` (`origin`, `upstream`…) et la
+  règle du projet (`branchPerTask`) : ils servent aux étapes 5 et 7.
 - Git absent du poste (« commande introuvable », « not recognized ») : ne dis rien. Pas un dépôt Git
   (« not a git repository »), dépôt sans adresse, ou aucune correspondance : préviens et attends la
   réponse avant la suite. « Ce dossier (dépôt <adresse sans ce qui précède @> | dépôt Git sans
@@ -105,7 +106,7 @@ lues avant l'ouverture : la plus récente de la liste est la précédente.
 - **Où on en est** (champ `handover`) : un titre « Où on en est (mis à jour le <date> par
   <auteur>) », puis le texte en entier, sans le résumer ni le couper.
 - Pas de « Où on en est » (tâche ancienne), mais déjà une session : deux lignes tirées de la
-  dernière session (résumé, reste à faire, prochaine étape).
+  précédente (résumé, reste à faire, prochaine étape).
 - Puis, de la dernière session clôturée : « Travail en cours : … » et « En attente : … », chacun
   seulement s'il est rempli.
 - Aucune session avant celle-ci : rien.
@@ -127,8 +128,10 @@ la description : reformule-la. N'invente rien : ce que la carte ne dit pas, pose
 
 Les questions tiennent compte du travail en cours de la dernière session clôturée :
 - il nomme une branche et le dossier n'est pas dessus (`git branch --show-current`) : demande s'il
-  faut la récupérer (`git fetch`, puis passer dessus). Sauf si c'est la branche de la tâche et que le
-  projet veut une branche par tâche : l'étape 7 la prend d'office, ne demande rien ;
+  faut la récupérer. Sauf si c'est la branche de la tâche et que le projet veut une branche par
+  tâche : l'étape 7 la prend d'office, ne demande rien. Si l'utilisateur dit oui : fais comme à
+  l'étape 7 (serveur interrogé d'abord, fichiers modifiés annoncés, retard sur le serveur dit, et
+  attente de la réponse avant tout travail) ;
 - des fichiers modifiés ou des commits non poussés sont restés sur un autre poste : dis-le, et
   demande s'il faut les attendre ou repartir sans eux ;
 - une attente est notée : demande si la réponse est arrivée.
@@ -146,27 +149,46 @@ l'utilisateur te corrige sans rien demander d'autre, reformule de nouveau et red
 
 Seulement si le projet veut une branche par tâche (`branchPerTask` vrai) et que le dossier est un
 des dépôts du projet (étape 3 bis). Sinon, saute ce point sans rien dire. Fais-le juste après avoir
-rangé la demande de départ, avant tout travail. Rien à demander : c'est la règle du projet.
+rangé la demande de départ, avant tout travail. Ne demande pas s'il faut une branche : c'est la
+règle du projet. Ne demande que dans les cas dits plus bas.
 
 - Nom : `kodeban/<numéro>-<titre>`, le titre en minuscules, sans accents, les mots reliés par des
   tirets (ni espace, ni ponctuation, ni tiret au début ou à la fin), 40 caractères au plus, coupé
   entre deux mots. Par exemple, #87 « Export CSV des tâches » : `kodeban/87-export-csv-des-taches`.
-- Lance `git branch --show-current`.
-  - Le dossier est déjà sur une branche `kodeban/<numéro>-…` de cette tâche : rien à faire.
-  - Il est sur une autre branche que la branche principale du dépôt (`mainBranch`), ou sur aucune :
-    n'y touche pas. Le dépôt n'a pas de branche principale sur le site : ce cas ne joue pas.
-- Sinon, cherche la branche : `git branch --list "kodeban/<numéro>-*"` ; pas là, `git fetch --all`,
-  puis `git branch -r --list "*/kodeban/<numéro>-*"`. Une branche de ce numéro existe (son titre a
-  pu changer depuis) : `git switch <son nom>`, sans le nom du serveur devant.
-- Aucune : `git switch -c <nom>`, depuis la branche où est le dossier (la branche principale ; sans
-  `mainBranch`, la branche courante).
-- Git refuse de changer de branche à cause de fichiers modifiés non commités : dis-le en une ligne
-  (les fichiers en cause) et attends la réponse avant tout travail. Jamais de commit ni de remisage
-  pour passer outre.
-- `git fetch` échoue (réseau, droits) : dis-le en une ligne et continue avec ce qui est sur le poste.
+- D'abord, toujours, interroge le serveur : `git fetch --all --prune`. Une branche du poste peut
+  être en retard : un autre poste a pu la pousser depuis. Le fetch échoue (réseau, droits) : dis-le
+  en une ligne et continue avec ce qui est sur le poste ; mais s'il n'y a aucune branche de la tâche
+  sur le poste, demande avant d'en créer une (elle existe peut-être déjà sur le serveur) et attends.
+- `git status --porcelain --branch` : la première ligne donne la branche où est le dossier, les
+  suivantes les fichiers modifiés.
+  - Sur aucune branche (`HEAD (no branch)`) : n'y touche pas, que `mainBranch` soit connue ou non.
+  - Déjà sur une branche `kodeban/<numéro>-…` de cette tâche : ne change pas de branche ; regarde
+    seulement son retard (plus bas).
+  - Sur une autre branche que la branche principale du dépôt (`mainBranch`) : n'y touche pas. Le
+    dépôt n'a pas de branche principale sur le site : ce cas ne joue pas.
+- Sinon, cherche la branche de la tâche. Son titre a pu changer depuis : tout nom
+  `kodeban/<numéro>-…` compte.
+  - Sur le poste : `git branch -vv --list "kodeban/<numéro>-*"` (montre aussi l'état de sa copie sur
+    le serveur). Une seule : `git switch <nom>`. Plusieurs : prends celle dont la copie sur le
+    serveur existe et n'est pas en retard (ni `behind`, ni `gone`) ; s'il n'y en a pas exactement
+    une, montre-les et demande.
+  - Seulement sur le serveur : `git branch -r --list "*/kodeban/<numéro>-*"`, puis
+    `git switch --track <serveur>/<nom>`, avec le serveur du dépôt du projet retenu à l'étape 3 bis
+    (dans un fork, souvent `upstream` et non `origin`).
+  - Nulle part : `git switch -c <nom>`, depuis la branche où est le dossier (la branche principale ;
+    sans `mainBranch`, la branche courante).
+- Des fichiers modifiés non commités suivent le changement de branche : nomme-les dans l'annonce.
+  Git refuse de changer de branche à cause d'eux : dis-le en une ligne (les fichiers en cause) et
+  attends la réponse avant tout travail. Jamais de commit ni de remisage pour passer outre.
+- Une fois sur la branche de la tâche, relance `git status --porcelain --branch` : `behind <n>` sur
+  la première ligne veut dire que le serveur a <n> commits de plus. Dis-le dans l'annonce et attends
+  la réponse avant tout travail.
 
 Une ligne pour annoncer la branche : « Branche de la tâche : `<nom>` (créée | récupérée du serveur |
-déjà là). » ; ou, si tu n'y as pas touché : « Le dossier est sur la branche `<nom>` : je la garde. »
+déjà là) » ; s'il y en a, « ; les fichiers modifiés <fichiers> suivent » ; s'il y a du retard,
+« ; elle a <n> commits de retard sur le serveur : je la mets à jour avant de commencer ? ». Si tu
+n'y as pas touché : « Le dossier est sur la branche `<nom>` : je la garde. », ou « Le dossier n'est
+sur aucune branche : je n'y touche pas. »
 
 ## Règles jusqu'à la clôture de la session
 
